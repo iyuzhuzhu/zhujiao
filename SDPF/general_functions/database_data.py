@@ -61,7 +61,7 @@ def get_is_running_shot(db, collection_name, shot_num, max_shot: int, min_shot=-
 
 
 class DatabaseFinder(CollectionDB):
-    def __init__(self, input, shot, shot_num, db, collection_name, separate_identifier='.'):
+    def __init__(self, input, shot: int, shot_num, db, collection_name, separate_identifier='.'):
         """
         返回数据库的一定数目的记录
         :param input: 查询字符  如sensors.sensor1.r_rms

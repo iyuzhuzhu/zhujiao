@@ -10,7 +10,8 @@ setup(
         'console_scripts': [
             'masterproc = MasterProc.main:main',
             'rms = rms.main:main',
-            'trend = trend.main:main'
+            'trend = trend.main:main',
+            'ai = ai.main:main'
         ]
     },
     author='J-TEXT 103',

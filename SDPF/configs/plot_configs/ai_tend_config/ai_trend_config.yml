@@ -1,0 +1,34 @@
+db: # 数据库的连接信息
+    connection: "mongodb://localhost:27017/"
+    db_name: "bm"
+    collection: "$bm$_ai"
+
+output_base_path: "D:/资源汇总/新球磨项目/Data/Inference/$bm$/$shot_2$00/$shot$/ai_trend_plot/" #这一个配置下的所有的trend都输出到这一个目录下
+gui_config_file: "D:/资源汇总/新球磨项目/configs/plot_configs/ai_trend_config/ai_plot_desc.yml" #每次画完图，把这个复制到输出的文件夹下.output_base_path
+plot_desc_file: "plot_desc.yml" # 输出图片文件夹内描述文件的名称
+x_input: "$bm$_ai>time" # 绘制图像的横坐标
+inputs:
+    - "$bm$_ai>sensors.sensor1.r_ai" # >前面是collection名字，后面是读出类的记录里面的路径，找到当前记录报警的级别
+    - "$bm$_ai>sensors.sensor1.z_ai" # >前面是collection名字，后面是读出类的记录里面的路径，找到当前记录报警的级别
+
+outputs: #这个要和input数量对应
+    - file_name: "sensor1_r_ai.png"
+      point_min: 10
+      point_max: 20
+      line_color: "#0000FF"
+      back_color: "#ffffff"
+      line_width: 3
+      x_label: "时间"
+      y_label: "加速度"
+      title: "sensor1_径向振动重构误差趋势" #还有很多画图的配置，你参考原来老艾的设计和配置文件
+    - file_name: "sensor1_z_ai.png"
+      point_min: 10
+      point_max: 20
+      line_color: "#0000FF"
+      back_color: "#ffffff"
+      line_width: 3
+      x_label: "时间"
+      y_label: "加速度"
+      title: "sensor1_轴向振动重构误差趋势"
+
+

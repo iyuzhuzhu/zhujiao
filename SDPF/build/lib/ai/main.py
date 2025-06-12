@@ -26,11 +26,8 @@ class Ai(BasicModel):
         if rms_record['is_running']:
             sample_data, sensors_data = functions.get_sensors_data(self.data_source, self.shot, self.name, self.sensors)
             rec_data = self.predict_single_shot(sensors_data)
-            # print(rec_data)
             self.plot_model(sensors_data, rec_data, sample_data)
-            sensors = self.calculate_single_sensors_ai(rec_data)
-            print(sensors)
-            self.single_shot_summary(sensors, rms_record)
+            self.single_shot_summary(rec_data, rms_record)
 
     def get_training_data(self):
         is_running_collection = functions.replace_ball_mill_name(self.config['db']['is_running_collection'], self.name)
@@ -51,12 +48,11 @@ class Ai(BasicModel):
         model_path = self.config['model_path']
         model_path = functions.replace_ball_mill_name(model_path, self.name)
         model_path = functions.replace_sensor(model_path, sensor)
-        print(model_path)
         # print(model_path)
         functions.create_folder(model_path)
         folder_path = model_path
         model_path = os.path.join(model_path, model_name)
-        print(model_path)
+        # print(model_path)
         return model_path, folder_path
 
     def train_models(self):
@@ -189,7 +185,7 @@ class Ai(BasicModel):
         channel_num, r_ai, r_num, z_ai, z_num = 0, 0, 0, 0, 0
         for channel in data.keys():
             # axis = functions.channel_to_axis(self.config['channels'], channel)
-            rec_loss = data[channel]['loss']
+            rec_loss = float(data[channel]['loss'])
             axis = 'axis' + '_' + str(channel_num+1) + '_' + self.model_name  # axis_1_ai
             single_sensor_data[axis] = rec_loss
             if self.config['channels'][channel_num]['channel' + str(channel_num)] == 'r':
@@ -202,6 +198,7 @@ class Ai(BasicModel):
         single_sensor_data['r_' + self.model_name] = r_ai / r_num
         single_sensor_data['z_' + self.model_name] = z_ai / z_num
         single_sensor_data = self.default_single_sensor_template(single_sensor_data, self.model_name)
+        # print(single_sensor_data)
         return single_sensor_data
 
     def calculate_single_sensors_ai(self, rec_data):
@@ -239,34 +236,49 @@ class Ai(BasicModel):
                 sensors[sensor] = self.get_single_sensor_result(err=True)
         return sensors
 
-    def single_shot_summary(self, sensors, rms_record):
+    def single_shot_summary(self, rec_data, rms_record):
         """
         汇总当前summary信息
         :return:
         """
         single_shot_summary = rms_record
-        sensors = self.single_shot_sensors_summary(sensors, rms_record['is_running'])
+        sensors = self.single_shot_sensors_summary(rec_data,  rms_record['is_running'])
         single_shot_summary['sensors'] = sensors
         # self.date_time = functions.get_sample_time(sample_data)
         # single_shot_summary = functions.single_shot_summary(self.name, self.shot, sensors, self.date_time
         #                                                     , is_running)
-        collection_name = self.config['db']['collection']
         # functions.save_single_summary_mongodb(single_shot_summary, address, collection_name, self.shot,
         #                                       database_name=self.config['db']['db_name'])
-        print(single_shot_summary)
+        # print(single_shot_summary)
         functions.save_summary_mongodb(single_shot_summary, self.db, self.collection_name, self.shot)
         return single_shot_summary
+
+
+def test_shots_calculate():
+    # # 输入参数
+    # config_path, name, shot = functions.get_input_params('rms')
+    config_path = './config.yml'
+    name = 'bm1'
+    config = functions.read_config(config_path)
+    # 得到bail_mill中的bail_name
+    shots = np.arange(1108200, 1110400)
+    # shots = np.arange(1012849, 1110500)
+    for shot in shots:
+        shot = str(shot)
+        Ai(name, config_path, shot)
+        print(shot)
 
 
 def main():
     # test_shots_calculate()
     # # 输入参数
-    # config_path, name, shot = functions.get_input_params('ai')
-    config_path = './config.yml'
-    name = 'bm1'
-    shot = '1110400'
+    config_path, name, shot = functions.get_input_params('ai')
+    # config_path = './config.yml'
+    # name = 'bm1'
+    # shot = '1110400'
     Ai(name, config_path, shot)
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    test_shots_calculate()

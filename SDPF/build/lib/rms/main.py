@@ -431,8 +431,7 @@ def test_shots_calculate():
     # config_path, name, shot = functions.get_input_params('rms')
     config_path = './config.yml'
     name = 'bm1'
-    config = functions.read_config(config_path)
-    # 得到bail_mill中的bail_name
+    # 得到baLl_mill中的baLl_name
 
     # shots = np.arange(1108200, 1110400)
     shots = np.arange(1012849, 1110500)
@@ -445,10 +444,10 @@ def test_shots_calculate():
 def main():
     # test_shots_calculate()
     # # 输入参数
-    # config_path, name, shot = functions.get_input_params('rms')
-    config_path = './config.yml'
-    name = 'bm1'
-    shot = '1110400'
+    config_path, name, shot = functions.get_input_params('rms')
+    # config_path = './config.yml'
+    # name = 'bm1'
+    # shot = '1110400'
     Rms(name, config_path, shot)
     # test_shots_calculate()
 

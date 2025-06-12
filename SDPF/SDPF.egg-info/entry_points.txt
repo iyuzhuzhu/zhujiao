@@ -1,4 +1,5 @@
 [console_scripts]
+ai = ai.main:main
 masterproc = MasterProc.main:main
 rms = rms.main:main
 trend = trend.main:main

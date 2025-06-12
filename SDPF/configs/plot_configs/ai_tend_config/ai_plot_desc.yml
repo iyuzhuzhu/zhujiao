@@ -1,0 +1,61 @@
+plots:
+  - fileName: "sensor1_r_ai.png"
+    title: "电机轴承1_径向振动重构误差趋势"
+    size: m
+  - fileName: "sensor1_z_rms.png"
+    title: "电机轴承1_轴向振动趋势"
+    size: m
+  - fileName: "sensor1_temp.png"
+    title: "电机轴承1_温度趋势"
+    size: m
+  
+  - fileName: "sensor2_r_rms.png"
+    title: "电机轴承2_径向振动趋势"
+    size: m
+  - fileName: "sensor2_z_rms.png"
+    title: "电机轴承2_轴向振动趋势"
+    size: m
+  - fileName: "sensor2_temp.png"
+    title: "电机轴承2_温度趋势"
+    size: m
+
+  - fileName: "sensor3_r_rms.png"
+    title: "齿轮轴承1_径向振动趋势"
+    size: m
+  - fileName: "sensor3_z_rms.png"
+    title: "齿轮轴承1_轴向振动趋势"
+    size: m
+  - fileName: "sensor3_temp.png"
+    title: "齿轮轴承1_温度趋势"
+    size: m
+
+  - fileName: "sensor4_r_rms.png"
+    title: "齿轮轴承2_径向振动趋势"
+    size: m
+  - fileName: "sensor4_z_rms.png"
+    title: "齿轮轴承2_轴向振动趋势"
+    size: m
+  - fileName: "sensor4_temp.png"
+    title: "齿轮轴承2_温度趋势"
+    size: m
+
+  - fileName: "sensor5_r_rms.png"
+    title: "出料口轴承_径向振动趋势"
+    size: m
+  - fileName: "sensor5_z_rms.png"
+    title: "出料口轴承_轴向振动趋势"
+    size: m
+  - fileName: "sensor5_temp.png"
+    title: "出料口轴承_温度趋势"
+    size: m
+
+  - fileName: "sensor6_r_rms.png"
+    title: "进料口轴承_径向振动趋势"
+    size: m
+  - fileName: "sensor6_z_rms.png"
+    title: "进料口轴承_轴向振动趋势"
+    size: m
+  - fileName: "sensor6_temp.png"
+    title: "进料口轴承_温度趋势"
+    size: m
+

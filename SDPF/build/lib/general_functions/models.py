@@ -10,6 +10,7 @@ class BasicModel:
         self.data_source, self.output_path, self.sensors = (self.config['data_source'], self.config['Inference_path'],
                                                             self.config['sensors'])
         # print(self.config)
+        # print(self.config)
         self.collection_name = functions.replace_ball_mill_name(self.config['db']['collection'], self.name)
         self.client, self.db = connect_mongodb_database(self.config['db']['connection'], self.config['db']['db_name'])
         self.channels = self.get_sensor_channels()

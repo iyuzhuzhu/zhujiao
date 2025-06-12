@@ -132,7 +132,7 @@ def train_model(model, train_dataset, val_dataset, path, n_epochs, device, lr):
         history['train'].append(np.mean(train_losses))  # 记录训练epoch损失
         if epoch % 20 == 0:
             print("第{}个train_epoch，loss：{}".format(epoch, history['train'][-1]))
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        # os.makedirs(os.path.dirname(path), exist_ok=True)
         torch.save(model, path)
         val_losses = []
         model = model.eval()
