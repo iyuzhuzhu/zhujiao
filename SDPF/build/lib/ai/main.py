@@ -272,13 +272,13 @@ def test_shots_calculate():
 def main():
     # test_shots_calculate()
     # # 输入参数
-    config_path, name, shot = functions.get_input_params('ai')
-    # config_path = './config.yml'
-    # name = 'bm1'
-    # shot = '1110400'
+    # config_path, name, shot = functions.get_input_params('ai')
+    config_path = './config.yml'
+    name = 'bm1'
+    shot = '1110400'
     Ai(name, config_path, shot)
 
 
 if __name__ == "__main__":
-    # main()
-    test_shots_calculate()
+    main()
+    # test_shots_calculate()

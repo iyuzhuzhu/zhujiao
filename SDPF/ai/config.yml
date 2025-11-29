@@ -2,12 +2,12 @@ data_source: D:/资源汇总/新球磨项目/Data/Daq/$bm$/$shot_2$00/$sensor$/$
 Inference_path: D:/资源汇总/新球磨项目/Data/Inference/$bm$/$shot_2$00/$shot$ # 输出地址
 threshold_config_path: D:/资源汇总/新球磨项目/ballmill_project/code/SDPF/configs/threshold_configs/$bm$/ai_threshold_config.yml
 plot_config_path: D:/资源汇总/新球磨项目/ballmill_project/code/SDPF/configs/plot_configs/ai_plot_config/ai_plot_config.yml
-model_path: D:/bm_model/Train/$bm$/$sensor$ # 输出地址
+model_path: C:/Users/86150/Desktop/Train/$bm$/$sensor$ # 输出地址
 model_name: $channel$.pth
 #plot_config_path: E:/资源汇总/新球磨项目/configs/plot_configs/basic_plot_config/basic_plot_config.yml
 #plot_desc_path: E:/资源汇总/新球磨项目/configs/plot_configs/basic_plot_config/basic_plot_desc.yml
 #plot_desc_file: plot_desc.yml # 复制的画图配置文件的名称
-is_training: False # 是否自动更新警报阈值
+is_training: True # 是否自动更新警报阈值
 training_shots: 5000
 
 db: # 数据库的连接信息

@@ -10,6 +10,36 @@ from ai.plot import plot_rec
 from alarmSystem.Data.db.collectionDB import CollectionDB
 
 
+def add_gaussian_noise(data, mu=0.0, sigma=0.01, anomaly_indices=None, anomaly_sigma=None):
+    """
+    向输入的数据列表添加正态分布噪声。
+
+    参数:
+        data (list or np.ndarray): 原始数据列表
+        mu (float): 噪声的均值，默认为 0
+        sigma (float): 正常噪声的标准差，默认为 0.01
+        anomaly_indices (list of int): 要加入异常噪声的索引位置，默认为 None
+        anomaly_sigma (float): 异常噪声的标准差，若不指定则使用 sigma
+
+    返回:
+        np.ndarray: 添加噪声后的数据数组
+    """
+    # 转换为 numpy 数组便于处理
+    data_array = np.array(data, dtype=float)
+    noise = np.random.normal(mu, sigma, size=len(data_array))
+
+    # 如果指定了异常索引，则替换那部分噪声
+    if anomaly_indices is not None:
+        anomaly_sigma = anomaly_sigma if anomaly_sigma is not None else sigma
+        anomaly_noise = np.random.normal(mu, anomaly_sigma, size=len(anomaly_indices))
+        noise[anomaly_indices] = anomaly_noise
+
+    # 叠加噪声
+    noisy_data = data_array + noise
+
+    return noisy_data
+
+
 class Ai(BasicModel):
     def __init__(self, name, config_path, shot, model_name='ai'):
         super().__init__(name, config_path, shot, model_name)
@@ -23,8 +53,13 @@ class Ai(BasicModel):
             self.train_models()
         rms_record = functions.get_rms_record(self.config['db']['is_running_collection'], self.name, int(self.shot),
                                               self.db)
+
         if rms_record['is_running']:
             sample_data, sensors_data = functions.get_sensors_data(self.data_source, self.shot, self.name, self.sensors)
+            for sensor in self.sensors:
+                for channel in self.channels:
+                    # 叠加标准正态噪声
+                    sensors_data[sensor][channel] = add_gaussian_noise(sensors_data[sensor][channel], sigma=0.04)
             rec_data = self.predict_single_shot(sensors_data)
             self.plot_model(sensors_data, rec_data, sample_data)
             self.single_shot_summary(rec_data, rms_record)
@@ -261,7 +296,7 @@ def test_shots_calculate():
     name = 'bm1'
     config = functions.read_config(config_path)
     # 得到bail_mill中的bail_name
-    shots = np.arange(1108200, 1110400)
+    shots = np.arange(1110380, 1110401)
     # shots = np.arange(1012849, 1110500)
     for shot in shots:
         shot = str(shot)
@@ -272,13 +307,13 @@ def test_shots_calculate():
 def main():
     # test_shots_calculate()
     # # 输入参数
-    # config_path, name, shot = functions.get_input_params('ai')
-    config_path = './config.yml'
-    name = 'bm1'
-    shot = '1110400'
+    config_path, name, shot = functions.get_input_params('ai')
+    # config_path = './config.yml'
+    # name = 'bm1'
+    # shot = '1110400'
     Ai(name, config_path, shot)
 
 
 if __name__ == "__main__":
-    main()
-    # test_shots_calculate()
+    # main()
+    test_shots_calculate()

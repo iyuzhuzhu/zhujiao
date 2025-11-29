@@ -13,6 +13,7 @@ ai/Train.py
 ai/__init__.py
 ai/ae_model.py
 ai/main.py
+ai/main2.py
 ai/plot.py
 ai/train.py
 general_functions/__init__.py
