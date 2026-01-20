@@ -9,8 +9,8 @@ from ai.ae_model import LstmAutoencoder
 from collections import Counter
 
 
-EPOCH = 150
-LR = 0.0004
+EPOCH = 100
+LR = 0.001
 RANDOM_SEED = 42
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 TEST_SIZE = 0.1
@@ -101,8 +101,8 @@ def preprocessing_training_data(training_data, test_size=TEST_SIZE, val_test_siz
 
 
 def create_train_model(train_data, val_data, model_path, folder_path=None, epochs=EPOCH, device=DEVICE, lr=LR,
-                       is_plot_loss=True, loss_picture_name='history.png'):
-    model = LstmAutoencoder()
+                       is_plot_loss=True, loss_picture_name='history.png', seq_len=4096, num_channels=3):
+    model = LstmAutoencoder(seq_len=seq_len, num_channels=num_channels, device=device)
     model = model.to(device)
     history = train_model(model, train_data, val_data, model_path, epochs, device, lr)
     if is_plot_loss:
@@ -113,11 +113,15 @@ def create_train_model(train_data, val_data, model_path, folder_path=None, epoch
     return history
 
 
-def train_model(model, train_dataset, val_dataset, path, n_epochs, device, lr):
+def train_model(model, train_dataset, val_dataset, path, n_epochs, device, lr, patience=15):
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    criterion = nn.MSELoss(reduction='sum').to(device)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, verbose=True)
+    criterion = nn.MSELoss(reduction='mean').to(device)
     #     criterion = nn.L1Loss(reduction='sum').to(device)
     history = dict(train=[], val=[])
+    best_val_loss = float('inf')
+    early_stop_counter = 0
+    
     for epoch in range(1, n_epochs + 1):
         model = model.train()
         train_losses = []
@@ -127,25 +131,43 @@ def train_model(model, train_dataset, val_dataset, path, n_epochs, device, lr):
             seq_pred = model(seq_true)
             loss = criterion(seq_pred, seq_true)
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             train_losses.append(loss.item())
         history['train'].append(np.mean(train_losses))  # 记录训练epoch损失
-        if epoch % 20 == 0:
-            print("第{}个train_epoch，loss：{}".format(epoch, history['train'][-1]))
-        # os.makedirs(os.path.dirname(path), exist_ok=True)
-        torch.save(model, path)
+        
+        # Validation
         val_losses = []
         model = model.eval()
         with torch.no_grad():
-            for seq_true in val_dataset:
-                seq_true = seq_true.reshape(1, -1)
+            for (seq_true,) in val_dataset:
                 seq_true = seq_true.to(device)
                 seq_pred = model(seq_true)
                 loss = criterion(seq_pred, seq_true)
                 val_losses.append(loss.item())
+        
         train_loss = np.mean(train_losses)
         val_loss = np.mean(val_losses)
         history['val'].append(val_loss)
+        
+        scheduler.step(val_loss)
+        
+        print("第{}个train_epoch，train_loss：{}，val_loss：{}".format(epoch, train_loss, val_loss))
+        
+        # Save best model and Early Stopping
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            early_stop_counter = 0
+            # os.makedirs(os.path.dirname(path), exist_ok=True)
+            torch.save(model, path)
+            print(f"Validation loss decreased to {best_val_loss:.6f}. Saving model...")
+        else:
+            early_stop_counter += 1
+            print(f"Validation loss did not improve. Counter: {early_stop_counter}/{patience}")
+            if early_stop_counter >= patience:
+                print("Early stopping triggered.")
+                break
+            
     return history
 
 
@@ -153,7 +175,7 @@ def plot_history(history, save_folder_path, fig_name):
     plt.figure(figsize=(10, 5))
     plt.subplot(121)
     history['train'] = np.array(history['train'])
-    plt.plot(history['train'] / 50)
+    plt.plot(history['train'])
     # ax.plot(history['val'])
     plt.ylabel('Loss')
     plt.xlabel('Epoch')

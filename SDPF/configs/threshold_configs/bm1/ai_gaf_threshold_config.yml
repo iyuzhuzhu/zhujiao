@@ -1,0 +1,31 @@
+sensors_threshold:
+  sensor1:
+    of_h_r: 0.00021976428979542106
+    of_h_z: 6.51053223919007e-05
+    of_hh_r: 0.0003032778622582555
+    of_hh_z: 7.958553487696918e-05
+  sensor2:
+    of_h_r: '0.01137486'
+    of_h_z: '0.00645622'
+    of_hh_r: '0.01202064'
+    of_hh_z: '0.00664306'
+  sensor3:
+    of_h_r: '0.0'
+    of_h_z: '0.0'
+    of_hh_r: '0.0'
+    of_hh_z: '0.0'
+  sensor4:
+    of_h_r: '0.0'
+    of_h_z: '0.0'
+    of_hh_r: '0.0'
+    of_hh_z: '0.0'
+  sensor5:
+    of_h_r: '0.0116545'
+    of_h_z: '0.02849718'
+    of_hh_r: '0.01250253'
+    of_hh_z: '0.02902619'
+  sensor6:
+    of_h_r: '0.0'
+    of_h_z: '0.0'
+    of_hh_r: '0.0'
+    of_hh_z: '0.0'

@@ -1,9 +1,9 @@
 data_source: D:/资源汇总/新球磨项目/Data/Daq/$bm$/$shot_2$00/$sensor$/$shot$.hdf5 # 数据地址
 gaf_source: D:/资源汇总/新球磨项目/Data/Inference/$bm$/$shot_2$00/$shot$/$sensor$_gaf.npy # GAF数据地址
 Inference_path: D:/资源汇总/新球磨项目/Data/Inference/$bm$/$shot_2$00/$shot$ # 输出地址
-threshold_config_path: D:/资源汇总/新球磨项目/ballmill_project/code/SDPF/configs/threshold_configs/$bm$/ai_gaf_threshold_config.yml
+threshold_config_path: D:/资源汇总/新球磨项目/ballmill_project/code/SDPF/configs/threshold_configs/$bm$/ai_threshold_config.yml
+normalization_config_path: D:/资源汇总/新球磨项目/ballmill_project/code/SDPF/configs/threshold_configs/$bm$/ai_normalization_config.yml
 plot_config_path: D:/资源汇总/新球磨项目/ballmill_project/code/SDPF/configs/plot_configs/ai_plot_config/ai_plot_config.yml
-normalization_config_path: D:/资源汇总/新球磨项目/ballmill_project/code/SDPF/configs/normalization_configs/$bm$/normalization_config.yml
 model_path: D:/资源汇总/新球磨项目/model/$bm$/$sensor$ # 输出地址
 model_name: $channel$.pth
 #plot_config_path: E:/资源汇总/新球磨项目/configs/plot_configs/basic_plot_config/basic_plot_config.yml

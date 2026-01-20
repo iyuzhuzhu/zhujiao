@@ -434,7 +434,7 @@ def test_shots_calculate():
     # 得到baLl_mill中的baLl_name
 
     # shots = np.arange(1108200, 1110400)
-    shots = np.arange(1012849, 1110500)
+    shots = np.arange(1110400, 1110500)
     for shot in shots:
         shot = str(shot)
         Rms(name, config_path, shot)
@@ -444,12 +444,12 @@ def test_shots_calculate():
 def main():
     # test_shots_calculate()
     # # 输入参数
-    config_path, name, shot = functions.get_input_params('rms')
+    # config_path, name, shot = functions.get_input_params('rms')
     # config_path = './config.yml'
     # name = 'bm1'
     # shot = '1110400'
-    Rms(name, config_path, shot)
-    # test_shots_calculate()
+    # Rms(name, config_path, shot)
+    test_shots_calculate()
 
 
 if __name__ == '__main__':

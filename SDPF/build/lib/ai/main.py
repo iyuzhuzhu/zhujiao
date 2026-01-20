@@ -3,11 +3,13 @@ from general_functions.models import BasicModel
 import torch
 import numpy as np
 import os
-from ai.Train import preprocessing_training_data, create_train_model
+import yaml
+from ai.Train import create_train_model
 from ai.Inference import predict_single
 from pathlib import Path
 from ai.plot import plot_rec
 from alarmSystem.Data.db.collectionDB import CollectionDB
+from torch.utils.data import DataLoader, TensorDataset
 
 
 class Ai(BasicModel):
@@ -23,7 +25,7 @@ class Ai(BasicModel):
             self.train_models()
         rms_record = functions.get_rms_record(self.config['db']['is_running_collection'], self.name, int(self.shot),
                                               self.db)
-        if rms_record['is_running']:
+        if rms_record and rms_record.get('is_running', False):
             sample_data, sensors_data = functions.get_sensors_data(self.data_source, self.shot, self.name, self.sensors)
             rec_data = self.predict_single_shot(sensors_data)
             self.plot_model(sensors_data, rec_data, sample_data)
@@ -37,65 +39,194 @@ class Ai(BasicModel):
                                                                  int(self.shot), self.data_source, self.name,
                                                                  self.sensors,
                                                                  self.channels)
-        # train_data, val_data, test_data = preprocessing_training_data(shots_data)
         return running_shots_data
 
-    def get_save_model_path(self, sensor, channel):
+    def get_save_model_path(self, sensor):
         """
         得到model的完整保存路径（包括模型的文件名称）
         """
-        model_name = functions.replace_string(self.config['model_name'], channel, 'channel')
+        model_name = f"{sensor}_lstm_model.pth"
         model_path = self.config['model_path']
         model_path = functions.replace_ball_mill_name(model_path, self.name)
         model_path = functions.replace_sensor(model_path, sensor)
-        # print(model_path)
         functions.create_folder(model_path)
         folder_path = model_path
         model_path = os.path.join(model_path, model_name)
-        # print(model_path)
         return model_path, folder_path
+
+    def save_normalization_params(self, sensor, norm_params):
+        norm_config_path = self.config.get('normalization_config_path')
+        if not norm_config_path:
+            # Fallback or create default path if not in config
+            norm_config_path = os.path.join(os.path.dirname(self.config_path), 'normalization_config.yml')
+            
+        norm_config_path = functions.replace_ball_mill_name(norm_config_path, self.name)
+        
+        if os.path.exists(norm_config_path):
+            with open(norm_config_path, 'r', encoding='utf-8') as f:
+                config = yaml.load(f, Loader=yaml.FullLoader) or {}
+        else:
+            config = {}
+            
+        if 'sensors_normalization' not in config:
+            config['sensors_normalization'] = {}
+            
+        config['sensors_normalization'][sensor] = norm_params
+        
+        os.makedirs(os.path.dirname(norm_config_path), exist_ok=True)
+        
+        with open(norm_config_path, 'w', encoding='utf-8') as f:
+            yaml.dump(config, f, default_flow_style=False)
+
+    def load_normalization_params(self, sensor):
+        norm_config_path = self.config.get('normalization_config_path')
+        if not norm_config_path:
+             norm_config_path = os.path.join(os.path.dirname(self.config_path), 'normalization_config.yml')
+            
+        norm_config_path = functions.replace_ball_mill_name(norm_config_path, self.name)
+        
+        if not os.path.exists(norm_config_path):
+            return None
+            
+        with open(norm_config_path, 'r', encoding='utf-8') as f:
+            config = yaml.load(f, Loader=yaml.FullLoader) or {}
+            
+        return config.get('sensors_normalization', {}).get(sensor)
 
     def train_models(self):
         """
-        训练针对于球磨机的每个sensor的每个channel分别训练对应模型
-        :return:
+        训练针对于球磨机的每个sensor的所有channel统一训练
         """
         running_shots_data = self.get_training_data()
-        # print(running_shots_data['sensor1'])
+        
         for sensor in self.sensors:
-            for channel in self.channels:
-                train_data, val_data, test_data = preprocessing_training_data(running_shots_data[sensor][channel])
-                model_path, folder_path = self.get_save_model_path(sensor, channel)
-                create_train_model(train_data, val_data, model_path, folder_path)
-                # predictions, losses = self.predict_single_axis_loss(test_data, sensor, channel)
-                # print(len(predictions[0]), losses[0])
-                # print(test_losses)
+            sensor_data = running_shots_data[sensor]
+            channels = list(sensor_data.keys())
+            num_shots = len(sensor_data[channels[0]])
+            
+            # Filter data by length
+            target_len = 4096 # Default length
+            sensor_data_list = []
+            for i in range(num_shots):
+                shot_dict = {}
+                is_valid = True
+                for ch in channels:
+                    data = sensor_data[ch][i]
+                    if len(data) < target_len:
+                        is_valid = False
+                        break
+                    shot_dict[ch] = data[:target_len]
+                if is_valid:
+                    sensor_data_list.append(shot_dict)
+            
+            print(f"Sensor {sensor}: {len(sensor_data_list)}/{num_shots} shots used")
+            if not sensor_data_list:
+                continue
 
-    def load_model(self, sensor, channel):
-        """
-        加载对应sensor的channel的模型
-        """
-        model_path, folder_path = self.get_save_model_path(sensor, channel)
-        return torch.load(model_path, weights_only=False)
+            # Normalization
+            norm_params = {}
+            for ch in channels:
+                all_data = np.concatenate([s[ch] for s in sensor_data_list])
+                mean = np.mean(all_data)
+                std = np.std(all_data)
+                if std == 0: std = 1.0
+                norm_params[ch] = {'mean': float(mean), 'std': float(std)}
+                for s in sensor_data_list:
+                    s[ch] = (s[ch] - mean) / std
+            
+            self.save_normalization_params(sensor, norm_params)
+            
+            # Prepare Tensor: (Batch, Seq_Len, Num_Channels)
+            seq_list = []
+            for shot_data in sensor_data_list:
+                ch_arrays = [shot_data[ch] for ch in channels]
+                seq = np.stack(ch_arrays, axis=1) # (Seq_Len, Num_Channels)
+                seq_list.append(seq)
+            seq_tensor = torch.tensor(np.array(seq_list), dtype=torch.float32)
+            
+            # Dataset
+            dataset = TensorDataset(seq_tensor)
+            train_size = int(0.9 * len(dataset))
+            val_size = len(dataset) - train_size
+            train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+            
+            train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=4, pin_memory=True)
+            val_loader = DataLoader(val_dataset, batch_size=128, num_workers=4, pin_memory=True)
+            
+            model_path, folder_path = self.get_save_model_path(sensor)
+            
+            # Train
+            create_train_model(train_loader, val_loader, model_path, folder_path, 
+                               seq_len=target_len, num_channels=len(channels))
 
-    def predict_single_axis_loss(self, data, sensor, channel, drop_last=True):
-        model = self.load_model(sensor, channel)
-        if drop_last:
-            data = data[:-1]
-        # print(data.shape)
-        prediction, loss = predict_single(model, data, self.device)
-        # print(predictions, losses)
-        return prediction, loss
+    def load_model(self, sensor):
+        """
+        加载对应sensor的模型
+        """
+        model_path, folder_path = self.get_save_model_path(sensor)
+        
+        # 安全处理: 如果是新版PyTorch (2.6+), 需要处理 weights_only=True 的默认行为
+        # 这里我们显式设置 weights_only=False，因为我们加载的是我们自己训练的模型
+        # 且包含了自定义的模型类结构 (CnnAutoencoder)
+        try:
+            return torch.load(model_path, map_location=self.device, weights_only=False)
+        except TypeError:
+            # 兼容旧版本 PyTorch (不支持 weights_only 参数)
+             return torch.load(model_path, map_location=self.device)
 
     def predict_single_shot(self, sensors_data):
         rec_data = {}
         for sensor in self.sensors:
             rec_data[sensor] = {}
-            for channel in self.channels:
-                rec_data[sensor][channel] = {}
-                prediction, loss = self.predict_single_axis_loss(sensors_data[sensor][channel], sensor, channel)
-                rec_data[sensor][channel]['pre'] = prediction
-                rec_data[sensor][channel]['loss'] = loss
+            sensor_data = sensors_data[sensor]
+            channels = list(sensor_data.keys())
+            
+            # Load normalization params
+            norm_params = self.load_normalization_params(sensor)
+            
+            # Prepare input
+            ch_arrays_norm = []
+            for ch in channels:
+                data = sensor_data[ch]
+                if norm_params and ch in norm_params:
+                    mean = norm_params[ch]['mean']
+                    std = norm_params[ch]['std']
+                    data = (data - mean) / std
+                ch_arrays_norm.append(data)
+            
+            # Stack: (1, Seq_Len, Num_Channels)
+            seq = np.stack(ch_arrays_norm, axis=1)
+            seq_tensor = torch.tensor(seq, dtype=torch.float32).unsqueeze(0).to(self.device)
+            
+            # Load model
+            try:
+                model = self.load_model(sensor)
+                model.eval()
+            except FileNotFoundError:
+                print(f"Model for {sensor} not found. Skipping.")
+                continue
+            
+            # Predict
+            with torch.no_grad():
+                rec_seq = model(seq_tensor)
+                rec_seq_np = rec_seq.cpu().numpy().squeeze(0) # (Seq_Len, Num_Channels)
+                
+                for i, ch in enumerate(channels):
+                    rec_data[sensor][ch] = {}
+                    rec_ch = rec_seq_np[:, i]
+                    orig_ch = seq[:, i] # Normalized input
+                    
+                    # Denormalize for loss calculation (optional, but usually we want loss in original scale)
+                    if norm_params and ch in norm_params:
+                        mean = norm_params[ch]['mean']
+                        std = norm_params[ch]['std']
+                        rec_ch = rec_ch * std + mean
+                        orig_ch = orig_ch * std + mean
+                    
+                    loss = np.mean((rec_ch - orig_ch)**2)
+                    rec_data[sensor][ch]['loss'] = float(loss)
+                    rec_data[sensor][ch]['pre'] = rec_ch
+                    
         return rec_data
 
     def plot_model(self, sensors_data, rec_data, sample_data, drop_last=True):

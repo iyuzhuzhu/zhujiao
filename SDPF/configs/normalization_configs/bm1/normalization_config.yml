@@ -1,0 +1,11 @@
+sensors_normalization:
+  sensor1:
+    channel0:
+      mean: -5.2878356454565914e-06
+      std: 0.01442170132014265
+    channel1:
+      mean: -3.2934532778916645e-06
+      std: 0.01642892258498451
+    channel2:
+      mean: 2.178764270239183e-06
+      std: 0.007756823744560984

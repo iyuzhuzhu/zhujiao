@@ -1,7 +1,11 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.2
 Name: SDPF
 Version: 0.1
 Summary: Master Process module
 Author: J-TEXT 103
 Author-email: zhenwei@hust.edu.cn
 License: MIT
+Dynamic: author
+Dynamic: author-email
+Dynamic: license
+Dynamic: summary
